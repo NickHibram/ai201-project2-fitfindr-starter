@@ -18,6 +18,10 @@ Usage (once implemented):
     print(result["error"])   # None on success
 """
 
+import re
+
+from groq import APIError
+
 from tools import search_listings, suggest_outfit, create_fit_card
 
 
@@ -47,6 +51,34 @@ def _new_session(query: str, wardrobe: dict) -> dict:
 
 # ── planning loop ─────────────────────────────────────────────────────────────
 
+def _parse_query(query: str) -> dict:
+    """Extract explicit filters with regex; use the first sentence as the search."""
+    price_pattern = re.compile(
+        r'\b(?:under|below|up to|less than|at most|max(?:imum)?(?: price)?(?: of)?)'
+        r'\s*\$?\s*(\d+(?:\.\d+)?)\b', re.IGNORECASE,
+    )
+    size_pattern = re.compile(
+        r'\b(?:in\s+)?size\s+('
+        r'one\s+size|(?:US\s*)?\d+(?:\.\d+)?|W\d+(?:\s+L\d+)?|'
+        r'XXXS|XXS|XS|S/M|M/L|L/XL|XXXL|XXL|XL|S|M|L)\b',
+        re.IGNORECASE,
+    )
+    price = price_pattern.search(query)
+    size = size_pattern.search(query)
+    description = price_pattern.sub('', size_pattern.sub('', query))
+    description = re.split(r'[!?]|\.(?:\s|$)', description, maxsplit=1)[0]
+    description = re.sub(
+        r"^\s*(?:(?:i['’]m|i am)\s+)?(?:looking for|searching for|i want|i need|find me)\s+(?:an?\s+)?",
+        '', description, flags=re.IGNORECASE,
+    )
+    description = ' '.join(description.strip(' ,.;:').split())
+    return {
+        'description': description,
+        'size': size.group(1).upper() if size else None,
+        'max_price': float(price.group(1)) if price else None,
+    }
+
+
 def run_agent(query: str, wardrobe: dict) -> dict:
     """
     Main agent entry point. Runs the FitFindr planning loop for a single
@@ -63,7 +95,7 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         first — if it is not None, the interaction ended early and the other
         output fields (outfit_suggestion, fit_card) will be None.
 
-    TODO — implement this function using the planning loop you designed in planning.md:
+    Workflow:
 
         Step 1: Initialize the session with _new_session().
 
@@ -92,9 +124,45 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     Before writing code, complete the Planning Loop and State Management sections
     of planning.md — your implementation should match what you described there.
     """
-    # TODO: implement the planning loop
     session = _new_session(query, wardrobe)
-    session["error"] = "Planning loop not yet implemented."
+    if not query or not query.strip():
+        session['error'] = 'Please describe the clothing item you are looking for.'
+        return session
+
+    session['parsed'] = _parse_query(session['query'])
+    if not session['parsed']['description']:
+        session['error'] = 'Please include an item description along with your filters.'
+        return session
+
+    stage = 'search listings'
+    try:
+        session['search_results'] = search_listings(**session['parsed'])
+        if not session['search_results']:
+            session['error'] = (
+                'No listings match your request. Try broadening the description, '
+                'removing the size filter, or increasing the maximum price.'
+            )
+            return session
+
+        session['selected_item'] = session['search_results'][0]
+        stage = 'suggest an outfit'
+        session['outfit_suggestion'] = suggest_outfit(
+            new_item=session['selected_item'], wardrobe=session['wardrobe'],
+        )
+        if not isinstance(session['outfit_suggestion'], str) or not session['outfit_suggestion'].strip():
+            raise ValueError('No usable outfit suggestion was returned.')
+
+        stage = 'create a fit card'
+        session['fit_card'] = create_fit_card(
+            outfit=session['outfit_suggestion'], new_item=session['selected_item'],
+        )
+        if not isinstance(session['fit_card'], str) or not session['fit_card'].strip():
+            raise ValueError('No usable fit card was returned.')
+    except (APIError, OSError, ValueError, KeyError, TypeError):
+        # Keep provider responses and credentials out of user-facing errors.
+        session['error'] = f'Unable to {stage}. Check your configuration and inputs, then try again.'
+        session['outfit_suggestion'] = None
+        session['fit_card'] = None
     return session
 
 
