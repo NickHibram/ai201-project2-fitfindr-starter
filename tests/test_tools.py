@@ -1,3 +1,4 @@
+import json
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -31,6 +32,131 @@ def test_search_real_dataset():
     results = tools.search_listings('vintage graphic tee', size=None, max_price=30)
     assert results
     assert any(item['id'] == 'lst_006' for item in results)
+
+
+@pytest.mark.parametrize(('price', 'label'), [
+    (17, 'Good Deal'), (18, 'Fair Price'), (20, 'Fair Price'),
+    (22, 'Fair Price'), (23, 'Bad Deal'),
+])
+def test_compare_price_labels_and_boundaries(monkeypatch, item, price, label):
+    selected = dict(item, price=price)
+    monkeypatch.setattr(tools, 'load_listings', lambda: [
+        selected, dict(item, id='other1', price=18), dict(item, id='other2', price=22),
+        dict(item, id='unrelated', title='Vintage Hoodie', style_tags=['vintage'], price=200),
+    ])
+    result = tools.compare_price(selected)
+    assert result.startswith(f'### {label}\n')
+    assert '$20.00 median' in result
+    assert '2 comparable listings' in result
+    assert '$18.00 to $22.00' in result
+    assert 'Vintage Hoodie' not in result
+
+
+def test_compare_price_real_dataset():
+    selected = next(item for item in load_listings() if item['id'] == 'lst_002')
+    result = tools.compare_price(selected)
+    assert result.startswith('### Good Deal')
+    assert '$24.00 median' in result
+    assert '25.0% below' in result
+
+
+@pytest.mark.parametrize(('description', 'size'), [
+    ('vintage graphic tee', 'S'), ('vintage graphic tee', 'M'),
+    ('vintage graphic tee', 'L'), ('vintage graphic tee', 'XL'),
+    ('vintage flannel shirt', 'L'), ('vintage flannel shirt', 'M'),
+    ('90s track jacket', 'M'), ('90s track jacket', 'L'),
+    ('vintage baggy jeans', 'W30'), ('vintage baggy jeans', 'W32'),
+    ('chunky sneakers', 'US 8'), ('chunky sneakers', 'US 9'),
+    ('black combat boots', 'US 8'), ('vintage linen blazer', 'M'),
+])
+def test_dataset_supports_size_filtered_comparisons(description, size):
+    results = tools.search_listings(description, size=size)
+    assert len(results) >= 3
+    assessment = tools.compare_price(results[0], {'description': description, 'size': size})
+    assert assessment.startswith('### ')
+    assert 'comparable listings' in assessment
+    assert 'Insufficient comparison data' not in assessment
+
+
+def test_comparison_examples_cover_all_price_labels():
+    records = {record['id']: record for record in load_listings()}
+    for listing_id, label in [('lst_059', 'Good Deal'), ('lst_060', 'Fair Price'), ('lst_061', 'Bad Deal')]:
+        assessment = tools.compare_price(records[listing_id], {'description': '90s track jacket', 'size': 'M'})
+        assert assessment.startswith(f'### {label}\n')
+
+
+def test_listings_have_unique_ids_and_complete_fields():
+    records = load_listings()
+    assert len({record['id'] for record in records}) == len(records)
+    required = {'id', 'title', 'description', 'category', 'style_tags', 'size', 'condition', 'price', 'colors', 'brand', 'platform'}
+    for record in records:
+        assert required <= record.keys()
+        assert isinstance(record['price'], (int, float)) and record['price'] > 0
+        assert record['style_tags'] and record['colors']
+
+
+def test_comparison_respects_search_size_and_ranks_description(monkeypatch, item):
+    records = [
+        item,
+        dict(item, id='a', title='Plain Tee', description='', style_tags=[], size='L', price=20),
+        dict(item, id='b', title='Graphic Tee', size='L/XL', price=60),
+        dict(item, id='c', title='Small Graphic Tee', size='S', price=1),
+        dict(item, id='d', title='XL Graphic Tee', size='XL', price=2),
+    ]
+    monkeypatch.setattr(tools, 'load_listings', lambda: records)
+    result = tools.compare_price(item, {'description': 'graphic tee', 'size': 'large', 'max_price': 30})
+    assert '$40.00 median' in result
+    assert '2 comparable listings' in result
+    assert '| Graphic Tee |' in result and '| Plain Tee |' in result
+    assert result.index('| Graphic Tee |') < result.index('| Plain Tee |')
+    assert 'Small Graphic Tee' not in result and 'XL Graphic Tee' not in result
+    assert 'Requested size: L' in result
+    assert 'budget is not applied' in result
+
+
+def test_comparison_does_not_relax_size_for_insufficient_matches(monkeypatch, item):
+    monkeypatch.setattr(tools, 'load_listings', lambda: [
+        item, dict(item, id='a', size='L'), dict(item, id='b', size='S'),
+    ])
+    result = tools.compare_price(item, {'description': 'tee', 'size': 'L'})
+    assert 'Insufficient comparison data' in result and 'found 1 other' in result
+    assert 'Requested size: L' in result
+
+
+def test_search_accepts_size_words(monkeypatch, item):
+    monkeypatch.setattr(tools, 'load_listings', lambda: [item, dict(item, id='xl', size='XL')])
+    assert tools.search_listings('tee', size='large') == [item]
+
+
+def test_compare_price_missing_selection(groq_mock):
+    constructor, _ = groq_mock
+    assert 'search for an item first' in tools.compare_price(None)
+    constructor.assert_not_called()
+
+
+def test_compare_price_insufficient_data(monkeypatch, item):
+    monkeypatch.setattr(tools, 'load_listings', lambda: [item, dict(item, id='other')])
+    result = tools.compare_price(item)
+    assert 'Insufficient comparison data' in result
+    assert 'found 1 other' in result
+
+
+def test_compare_price_reacts_to_dataset_prices(monkeypatch, item, groq_mock):
+    _, client = groq_mock
+    records = [dict(item, id='a', price=10), dict(item, id='b', price=20)]
+    monkeypatch.setattr(tools, 'load_listings', lambda: records)
+    assert '### Bad Deal' in tools.compare_price(item)
+    records[0]['price'] = 40
+    records[1]['price'] = 60
+    assert '### Good Deal' in tools.compare_price(item)
+    client.chat.completions.create.assert_not_called()
+
+
+def test_compare_price_requires_same_category(monkeypatch, item):
+    monkeypatch.setattr(tools, 'load_listings', lambda: [
+        dict(item, id='a', category='outerwear'), dict(item, id='b', category='outerwear'),
+    ])
+    assert 'Insufficient comparison data' in tools.compare_price(item)
 
 
 @pytest.mark.parametrize('description', ['xyzzyunfindable', '', '   ', '!!!'])
@@ -87,6 +213,21 @@ def test_suggest_outfit_with_wardrobe(item, groq_mock):
     prompt = str(kwargs['messages'])
     assert item['title'] in prompt
     assert all(piece['name'] in prompt for piece in wardrobe['items'])
+
+
+def test_suggest_outfit_includes_prior_style_memory(item, groq_mock):
+    _, client = groq_mock
+    memory = (
+        '# Style Profile Memory\n\n'
+        'Preferences: vintage, streetwear, relaxed\n\n'
+        'Previous outfit: Baggy jeans and chunky sneakers.'
+    )
+
+    assert tools.suggest_outfit(item, {'items': []}, style_memory=memory) == 'Styling result.'
+
+    messages = client.chat.completions.create.call_args.kwargs['messages']
+    assert json.loads(messages[1]['content'])['style_memory'] == memory
+    assert 'previously learned style preferences' in messages[0]['content'].lower()
 
 
 def test_suggest_outfit_empty_wardrobe(item, groq_mock):

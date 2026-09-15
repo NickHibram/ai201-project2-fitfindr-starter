@@ -1,5 +1,6 @@
 # API keys — never commit these
 .env
+memory.md
 
 # Python
 __pycache__/

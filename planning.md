@@ -79,6 +79,42 @@ If outfit is empty or whitespace-only, the tool does not call the LLM — it ret
 
 ### Additional Tools (if any)
 
+### Tool 4: compare_price
+
+**What it does:** On a separate button click, compare the current selected listing
+with other dataset listings of the same category and garment type. Reuse
+`load_listings()` and exclude the selected ID. Detect garment types through a fixed
+vocabulary in titles, then style tags, as documented in the README. Reuse
+`search_listings(description, size, max_price=None)` with saved parsed parameters
+to filter by requested size and rank by description relevance, dropping zero-score
+items. Include all remaining same-category, same-type comparables in the median.
+Do not relax size constraints if fewer than two matches remain. Allow differing
+conditions, brands, and platforms without price adjustments. Do not reuse the
+search budget filter; explain that higher-priced items remain in the benchmark.
+
+**Input parameters:** `selected_item` (`dict | None`), from the saved agent session.
+`parsed` (`dict | None`, default `None`) supplies the original description and size.
+When omitted, no description or size restriction is applied.
+
+**What it returns:** A Markdown string containing the assessment, selected price,
+median comparable price, percentage difference, count, observed range, matching
+rules, and a table of supporting listings. With at least two comparables, more than
+10% below the median is Good Deal; within 10% inclusive is Fair Price; more than
+10% above is Bad Deal. Calculations are deterministic and use no LLM.
+
+**Failure behavior:** If no selected item exists, ask the user to search first.
+If the garment type is unrecognized or fewer than two other comparables exist,
+explain that comparison data is insufficient without assigning a deal label.
+
+**UI and state:** Preserve the three result panels and add a titled comparison
+section with a button and Markdown output before "Try these queries". Store the
+successful agent session in per-user `gr.State`. The button reads its selected
+item and parsed query, never reruns the agent or replaces the selected item.
+Each completed search clears comparison output;
+failed or blank searches also clear the saved selection. Search and comparison
+events share a queue to prevent comparison racing a search. The existing
+`handle_query()` three-string interface remains available as a wrapper.
+
 <!-- Copy the block above for any tools beyond the required three -->
 
 ---
@@ -87,10 +123,25 @@ If outfit is empty or whitespace-only, the tool does not call the LLM — it ret
 
 **How does your agent decide which tool to call next?**
 <!-- Describe the logic your planning loop uses. What does it look at? What conditions change its behavior? How does it know when it's done? -->
-It uses a ReAct-style loop: it reasons about the current session state, acts by calling the appropriate tool, and observes the result before deciding what to do next. First, it parses the user’s query and calls search_listings. If
+It uses a ReAct-style loop: it reasons about the current session state, acts by calling the appropriate tool, and observes the result before deciding what to do next. First, it parses the user’s query, extracts and records style preferences in the current app run's `memory.md`, and updates the remembered size when the query supplies one. If the query has no size, it reuses the last remembered size before calling search_listings. If
 no listings are returned, it records a helpful error and stops. Otherwise, it selects the highest-ranked listing,
-calls suggest_outfit, and then passes the resulting suggestion to create_fit_card. The loop is complete when a fit
+loads the style memory, calls suggest_outfit with that memory, and then passes the resulting suggestion to create_fit_card. The selected listing and outfit suggestion are appended to memory. The loop is complete when a fit
 card has been generated or when an error prevents the next tool from being called.
+
+Query parsing uses regular expressions for explicit price ceilings (such as
+`under $30`, `up to 30`, or `max price 30`) and sizes introduced by `size`.
+Common size words (small, medium, large, extra small, and extra large) are normalized
+to S, M, L, XS, and XL. These words can also occur without the `size` prefix in the
+first sentence, such as "large shirt"; the size word is removed from search keywords.
+An explicit `size` expression takes precedence over a standalone size word.
+After removing those filters and introductory phrases such as "I'm looking for a",
+the first sentence supplies the item description. Later styling questions and
+wardrobe descriptions do not become search keywords; the provided wardrobe dict
+remains the source of owned items. Omitted filters are stored as `None`.
+This deterministic parser covers the example queries; it does not interpret every
+possible natural-language phrasing. On tool failures, the agent records a helpful
+error and clears both generated output fields to `None`, following the existing
+`run_agent()` error contract while retaining the query and search state.
 
 ---
 
@@ -100,10 +151,20 @@ card has been generated or when an error prevents the next tool from being calle
 <!-- Describe how your agent stores and accesses state within a session. What data is tracked? How is it passed between tool calls? -->
 The agent stores information in a session dictionary that acts as the single source of truth for one interaction. It
 tracks the original query, parsed search parameters, matching listings, the selected item, the user’s wardrobe, the
-outfit suggestion, the final fit card, and any error message. After each tool call, the result is saved in the
+outfit suggestion, the final fit card, learned style profile, remembered size, memory path, and any error message. After each tool call, the result is saved in the
 session and passed as input to the next tool. For example, the selected result from search_listings is passed to
 suggest_outfit, and that outfit suggestion and selected item are then passed to create_fit_card. If a tool fails or
 returns no usable result, the error is stored in the session and the agent stops before calling the next tool.
+
+For the single-user local demo, `memory.md` provides continuity between otherwise
+fresh interaction dictionaries. It is reset when `python app.py` starts. Each valid
+query is appended with deterministically extracted style preferences; successful
+interactions also append the exact selected listing and outfit. Before calling
+`suggest_outfit`, the agent reads this Markdown and passes it as `style_memory`, so
+a later query can reuse preferences learned from earlier queries. The latest
+explicit size is also saved in the document. A later size-less query applies it
+as the search size, while a newly stated size replaces it. The Gradio profile
+panel displays both the learned styles and remembered size above the query inputs.
 
 
 ---

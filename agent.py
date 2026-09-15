@@ -18,11 +18,169 @@ Usage (once implemented):
     print(result["error"])   # None on success
 """
 
+import json
 import re
+from pathlib import Path
 
 from groq import APIError
 
 from tools import search_listings, suggest_outfit, create_fit_card
+from tools import SIZE_WORDS, normalize_size
+
+
+MEMORY_PATH = Path(__file__).resolve().parent / 'memory.md'
+MEMORY_TEMPLATE = (
+    '# Style Profile Memory\n\n'
+    'This document is reset whenever the local app starts. It records the style '\
+    'preferences and recommendations from the current app run.\n\n'
+    '## Learned Style Profile\n\n'
+    'Preferences: None yet\n\n'
+    'Last size: None yet\n\n'
+    '## Interaction History\n'
+)
+
+# Ordered so the profile remains stable and readable across interactions.
+STYLE_PATTERNS = (
+    ('vintage', r'\b(?:vintage|retro)\b'),
+    ('streetwear', r'\bstreetwear\b|\bbaggy jeans?\b|\bchunky sneakers?\b'),
+    ('relaxed', r'\b(?:relaxed|loose[ -]?fit)\b'),
+    ('oversized', r'\boversized\b'),
+    ('minimalist', r'\bminimal(?:ist)?\b'),
+    ('preppy', r'\bpreppy\b'),
+    ('business casual', r'\bbusiness casual\b'),
+    ('casual', r'\bcasual\b'),
+    ('sporty', r'\b(?:sporty|athleisure|athletic)\b'),
+    ('Y2K', r'\by2k\b'),
+    ('neutral colors', r'\b(?:neutral colors?|neutral palette|earth tones?)\b'),
+    ('colorful', r'\b(?:colorful|bright colors?|bold colors?)\b'),
+    ('formal', r'\bformal\b'),
+    ('grunge', r'\bgrunge\b'),
+    ('boho', r'\b(?:boho|bohemian)\b'),
+)
+
+
+def reset_style_memory(memory_path: str | Path | None = None) -> Path:
+    """Reset the single-user memory document for a new local app run."""
+    path = Path(memory_path) if memory_path is not None else MEMORY_PATH
+    path.write_text(MEMORY_TEMPLATE, encoding='utf-8')
+    return path
+
+
+def _extract_style_preferences(query: str) -> list[str]:
+    """Extract a concise, deterministic set of style preferences from a query."""
+    styles = [
+        name for name, pattern in STYLE_PATTERNS
+        if re.search(pattern, query, re.IGNORECASE)
+    ]
+    if 'business casual' in styles and 'casual' in styles:
+        styles.remove('casual')
+    return styles
+
+
+def _read_style_memory(path: Path) -> str:
+    """Read a valid memory document, initializing malformed or missing memory."""
+    try:
+        content = path.read_text(encoding='utf-8')
+        if (
+            content.startswith('# Style Profile Memory')
+            and re.search(r'^Preferences:\s*.+$', content, re.MULTILINE)
+            and re.search(r'^Last size:\s*.+$', content, re.MULTILINE)
+        ):
+            return content
+        reset_style_memory(path)
+        return MEMORY_TEMPLATE
+    except FileNotFoundError:
+        try:
+            reset_style_memory(path)
+        except OSError:
+            pass
+        return MEMORY_TEMPLATE
+    except OSError:
+        return MEMORY_TEMPLATE
+
+
+def _profile_from_memory(content: str) -> list[str]:
+    match = re.search(r'^Preferences:\s*(.+)$', content, re.MULTILINE)
+    if not match or match.group(1).strip().casefold() == 'none yet':
+        return []
+    return [value.strip() for value in match.group(1).split(',') if value.strip()]
+
+
+def _size_from_memory(content: str) -> str | None:
+    match = re.search(r'^Last size:\s*(.+)$', content, re.MULTILINE)
+    if not match or match.group(1).strip().casefold() == 'none yet':
+        return None
+    return normalize_size(match.group(1))
+
+
+def _write_style_memory(path: Path, content: str) -> None:
+    """Best-effort write: memory failures must not stop the fashion workflow."""
+    try:
+        path.write_text(content, encoding='utf-8')
+    except OSError:
+        pass
+
+
+def _record_query(
+    path: Path,
+    query: str,
+    explicit_size: str | None,
+) -> tuple[str, list[str], str | None]:
+    content = _read_style_memory(path)
+    profile = _profile_from_memory(content)
+    remembered_size = _size_from_memory(content)
+    extracted = _extract_style_preferences(query)
+    for style in extracted:
+        if style.casefold() not in {saved.casefold() for saved in profile}:
+            profile.append(style)
+    profile_text = ', '.join(profile) if profile else 'None yet'
+    content = re.sub(
+        r'^Preferences:\s*.+$', f'Preferences: {profile_text}', content,
+        count=1, flags=re.MULTILINE,
+    )
+    if explicit_size is not None:
+        remembered_size = normalize_size(explicit_size)
+        content = re.sub(
+            r'^Last size:\s*.+$', f'Last size: {remembered_size}', content,
+            count=1, flags=re.MULTILINE,
+        )
+    interaction_number = len(re.findall(r'^### Interaction \d+$', content, re.MULTILINE)) + 1
+    clean_query = ' '.join(query.split())
+    extracted_text = ', '.join(extracted) if extracted else 'None detected'
+    if explicit_size is not None:
+        size_text = f'{remembered_size} (new)'
+    elif remembered_size is not None:
+        size_text = f'{remembered_size} (remembered)'
+    else:
+        size_text = 'None'
+    content = content.rstrip() + (
+        f'\n\n### Interaction {interaction_number}\n\n'
+        f'**Query:** {clean_query}\n\n'
+        f'**Extracted styles:** {extracted_text}\n\n'
+        f'**Size used:** {size_text}\n'
+    )
+    _write_style_memory(path, content)
+    return content, profile, remembered_size
+
+
+def _record_interaction_result(
+    path: Path,
+    selected_item: dict | None = None,
+    outfit_suggestion: str | None = None,
+    result: str | None = None,
+) -> None:
+    content = _read_style_memory(path).rstrip()
+    if selected_item is not None:
+        content += (
+            '\n\n**Selected item:**\n\n```json\n'
+            + json.dumps(selected_item, ensure_ascii=False, indent=2)
+            + '\n```'
+        )
+    if outfit_suggestion is not None:
+        content += f'\n\n**Outfit suggestion:**\n\n{outfit_suggestion.strip()}'
+    if result is not None:
+        content += f'\n\n**Result:** {result}'
+    _write_style_memory(path, content + '\n')
 
 
 # ── session state ─────────────────────────────────────────────────────────────
@@ -59,7 +217,7 @@ def _parse_query(query: str) -> dict:
     )
     size_pattern = re.compile(
         r'\b(?:in\s+)?size\s+('
-        r'one\s+size|(?:US\s*)?\d+(?:\.\d+)?|W\d+(?:\s+L\d+)?|'
+        + SIZE_WORDS + r'|one\s+size|(?:US\s*)?\d+(?:\.\d+)?|W\d+(?:\s+L\d+)?|'
         r'XXXS|XXS|XS|S/M|M/L|L/XL|XXXL|XXL|XL|S|M|L)\b',
         re.IGNORECASE,
     )
@@ -67,6 +225,11 @@ def _parse_query(query: str) -> dict:
     size = size_pattern.search(query)
     description = price_pattern.sub('', size_pattern.sub('', query))
     description = re.split(r'[!?]|\.(?:\s|$)', description, maxsplit=1)[0]
+    word_size = re.search(r'\b' + SIZE_WORDS + r'\b', description, re.IGNORECASE)
+    requested_size = normalize_size(size.group(1)) if size else None
+    if requested_size is None and word_size:
+        requested_size = normalize_size(word_size.group())
+        description = description[:word_size.start()] + description[word_size.end():]
     description = re.sub(
         r"^\s*(?:(?:i['’]m|i am)\s+)?(?:looking for|searching for|i want|i need|find me)\s+(?:an?\s+)?",
         '', description, flags=re.IGNORECASE,
@@ -74,12 +237,16 @@ def _parse_query(query: str) -> dict:
     description = ' '.join(description.strip(' ,.;:').split())
     return {
         'description': description,
-        'size': size.group(1).upper() if size else None,
+        'size': requested_size,
         'max_price': float(price.group(1)) if price else None,
     }
 
 
-def run_agent(query: str, wardrobe: dict) -> dict:
+def run_agent(
+    query: str,
+    wardrobe: dict,
+    memory_path: str | Path | None = None,
+) -> dict:
     """
     Main agent entry point. Runs the FitFindr planning loop for a single
     user interaction and returns the completed session dict.
@@ -89,6 +256,8 @@ def run_agent(query: str, wardrobe: dict) -> dict:
                   (e.g., "vintage graphic tee under $30, size M")
         wardrobe: User's wardrobe dict — use get_example_wardrobe() or
                   get_empty_wardrobe() from utils/data_loader.py
+        memory_path: Optional path override used by tests. By default, use the
+                     single-user `memory.md` in the project root.
 
     Returns:
         The session dict after the interaction completes. Check session["error"]
@@ -125,6 +294,9 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     of planning.md — your implementation should match what you described there.
     """
     session = _new_session(query, wardrobe)
+    resolved_memory_path = Path(memory_path) if memory_path is not None else MEMORY_PATH
+    session['memory_path'] = str(resolved_memory_path)
+    session['style_profile'] = []
     if not query or not query.strip():
         session['error'] = 'Please describe the clothing item you are looking for.'
         return session
@@ -134,10 +306,20 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         session['error'] = 'Please include an item description along with your filters.'
         return session
 
+    explicit_size = session['parsed']['size']
+    style_memory, session['style_profile'], session['remembered_size'] = _record_query(
+        resolved_memory_path, session['query'], explicit_size,
+    )
+    if explicit_size is None and session['remembered_size'] is not None:
+        session['parsed']['size'] = session['remembered_size']
+
     stage = 'search listings'
     try:
         session['search_results'] = search_listings(**session['parsed'])
         if not session['search_results']:
+            _record_interaction_result(
+                resolved_memory_path, result='No matching listing was found.',
+            )
             session['error'] = (
                 'No listings match your request. Try broadening the description, '
                 'removing the size filter, or increasing the maximum price.'
@@ -148,9 +330,16 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         stage = 'suggest an outfit'
         session['outfit_suggestion'] = suggest_outfit(
             new_item=session['selected_item'], wardrobe=session['wardrobe'],
+            style_memory=style_memory,
         )
         if not isinstance(session['outfit_suggestion'], str) or not session['outfit_suggestion'].strip():
             raise ValueError('No usable outfit suggestion was returned.')
+
+        _record_interaction_result(
+            resolved_memory_path,
+            selected_item=session['selected_item'],
+            outfit_suggestion=session['outfit_suggestion'],
+        )
 
         stage = 'create a fit card'
         session['fit_card'] = create_fit_card(

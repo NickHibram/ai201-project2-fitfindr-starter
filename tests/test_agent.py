@@ -12,6 +12,12 @@ EXAMPLE_QUERY = (
 )
 
 
+@pytest.fixture(autouse=True)
+def isolate_default_memory(monkeypatch, tmp_path):
+    """Keep agent tests independent and never touch the demo memory file."""
+    monkeypatch.setattr(agent, 'MEMORY_PATH', tmp_path / 'memory.md')
+
+
 @pytest.fixture
 def tool_mocks(monkeypatch):
     mocks = {
@@ -67,6 +73,12 @@ def test_empty_search_stops_both_later_tools(tool_mocks):
     ('boots size US 8.5 up to $30.50', 'boots', 'US 8.5', 30.5),
     ('jeans size W30 L30 max price 40', 'jeans', 'W30 L30', 40.0),
     ('tee size s/m below 25', 'tee', 'S/M', 25.0),
+    ('large shirt under $30', 'shirt', 'L', 30.0),
+    ('shirt size large under $30', 'shirt', 'L', 30.0),
+    ('extra-large tee', 'tee', 'XL', None),
+    ('small shirt', 'shirt', 'S', None),
+    ('medium tee', 'tee', 'M', None),
+    ('extra small tee', 'tee', 'XS', None),
 ])
 def test_query_parsing(query, description, size, price):
     assert agent._parse_query(query) == {
@@ -124,3 +136,106 @@ def test_real_search_branch_and_session_isolation():
         # Only the successful run may call the LLM tools.
         suggest.assert_called_once()
         card.assert_called_once()
+
+
+def test_reset_style_memory_creates_empty_document(tmp_path):
+    memory_path = tmp_path / 'memory.md'
+
+    agent.reset_style_memory(memory_path)
+
+    content = memory_path.read_text(encoding='utf-8')
+    assert content.startswith('# Style Profile Memory')
+    assert 'Preferences: None yet' in content
+
+
+def test_successful_run_records_query_styles_item_and_outfit(tool_mocks, tmp_path):
+    memory_path = tmp_path / 'memory.md'
+    query = 'I want a vintage graphic tee with a relaxed streetwear look.'
+
+    session = agent.run_agent(query, {'items': []}, memory_path=memory_path)
+
+    content = memory_path.read_text(encoding='utf-8')
+    assert session['error'] is None
+    assert session['style_profile'] == ['vintage', 'streetwear', 'relaxed']
+    assert query in content
+    assert 'Preferences: vintage, streetwear, relaxed' in content
+    assert session['selected_item']['title'] in content
+    assert session['outfit_suggestion'].strip() in content
+
+
+def test_second_run_passes_first_interaction_memory_to_outfit_tool(tool_mocks, tmp_path):
+    memory_path = tmp_path / 'memory.md'
+    first_query = 'Find me a vintage graphic tee with a relaxed streetwear look.'
+    second_query = 'Find me a jacket under $60.'
+    tool_mocks['suggest_outfit'].side_effect = [
+        'Wear it with baggy jeans and chunky sneakers.',
+        'Style the jacket with a relaxed vintage streetwear outfit.',
+    ]
+
+    first = agent.run_agent(first_query, {'items': []}, memory_path=memory_path)
+    first_memory = memory_path.read_text(encoding='utf-8')
+    second = agent.run_agent(second_query, {'items': []}, memory_path=memory_path)
+
+    second_call = tool_mocks['suggest_outfit'].call_args_list[1]
+    supplied_memory = second_call.kwargs['style_memory']
+    assert first_query in supplied_memory
+    assert first['selected_item']['title'] in supplied_memory
+    assert first['outfit_suggestion'] in supplied_memory
+    assert 'Preferences: vintage, streetwear, relaxed' in supplied_memory
+    assert second['style_profile'] == ['vintage', 'streetwear', 'relaxed']
+    assert first_memory in memory_path.read_text(encoding='utf-8')
+
+
+def test_no_results_still_records_query_styles_without_outfit(tool_mocks, tmp_path):
+    memory_path = tmp_path / 'memory.md'
+    tool_mocks['search_listings'].return_value = []
+    query = 'Find me a minimalist formal ballgown size XXS under $5.'
+
+    session = agent.run_agent(query, {'items': []}, memory_path=memory_path)
+
+    content = memory_path.read_text(encoding='utf-8')
+    assert session['error'] is not None
+    assert session['fit_card'] is None
+    assert query in content
+    assert 'minimalist' in content
+    assert 'formal' in content
+    assert 'No matching listing was found.' in content
+    tool_mocks['suggest_outfit'].assert_not_called()
+
+
+def test_missing_or_malformed_memory_recovers_gracefully(tool_mocks, tmp_path):
+    memory_path = tmp_path / 'memory.md'
+    memory_path.write_text('not a valid style memory document', encoding='utf-8')
+
+    session = agent.run_agent('vintage graphic tee', {'items': []}, memory_path=memory_path)
+
+    assert session['error'] is None
+    content = memory_path.read_text(encoding='utf-8')
+    assert content.startswith('# Style Profile Memory')
+    assert 'Preferences: vintage' in content
+
+
+def test_second_query_inherits_last_explicit_size(tool_mocks, tmp_path):
+    memory_path = tmp_path / 'memory.md'
+
+    first = agent.run_agent('vintage graphic tee size M', {'items': []}, memory_path=memory_path)
+    second = agent.run_agent('Find me a jacket under $60', {'items': []}, memory_path=memory_path)
+
+    assert first['remembered_size'] == 'M'
+    assert second['remembered_size'] == 'M'
+    assert second['parsed']['size'] == 'M'
+    assert tool_mocks['search_listings'].call_args_list[1].kwargs['size'] == 'M'
+    content = memory_path.read_text(encoding='utf-8')
+    assert 'Last size: M' in content
+    assert '**Size used:** M (remembered)' in content
+
+
+def test_new_explicit_size_replaces_remembered_size(tool_mocks, tmp_path):
+    memory_path = tmp_path / 'memory.md'
+    agent.run_agent('graphic tee size M', {'items': []}, memory_path=memory_path)
+    changed = agent.run_agent('flannel shirt size L', {'items': []}, memory_path=memory_path)
+    inherited = agent.run_agent('vintage shirt', {'items': []}, memory_path=memory_path)
+
+    assert changed['remembered_size'] == 'L'
+    assert inherited['parsed']['size'] == 'L'
+    assert 'Last size: L' in memory_path.read_text(encoding='utf-8')

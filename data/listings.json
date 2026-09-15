@@ -518,5 +518,848 @@
     "colors": ["pink", "lavender", "mint"],
     "brand": null,
     "platform": "depop"
+  },
+  {
+    "id": "lst_041",
+    "title": "Vintage Graphic Tee — Desert Road",
+    "description": "Cotton graphic tee with a relaxed cut and softly faded print.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "graphic tee",
+      "streetwear"
+    ],
+    "size": "L",
+    "condition": "good",
+    "price": 16,
+    "colors": [
+      "black",
+      "white"
+    ],
+    "brand": null,
+    "platform": "depop"
+  },
+  {
+    "id": "lst_042",
+    "title": "Vintage Graphic Tee — Neon Arcade",
+    "description": "Cotton graphic tee with a relaxed cut and softly faded print.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "graphic tee",
+      "streetwear"
+    ],
+    "size": "L",
+    "condition": "good",
+    "price": 24,
+    "colors": [
+      "black",
+      "white"
+    ],
+    "brand": null,
+    "platform": "thredUp"
+  },
+  {
+    "id": "lst_043",
+    "title": "Vintage Graphic Tee — Moon Tour",
+    "description": "Cotton graphic tee with a relaxed cut and softly faded print.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "graphic tee",
+      "streetwear"
+    ],
+    "size": "L",
+    "condition": "good",
+    "price": 38,
+    "colors": [
+      "black",
+      "white"
+    ],
+    "brand": null,
+    "platform": "poshmark"
+  },
+  {
+    "id": "lst_044",
+    "title": "Vintage Graphic Tee — Coastal Club",
+    "description": "Cotton graphic tee with a classic crew neck and colorful vintage print.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "graphic tee",
+      "streetwear"
+    ],
+    "size": "M",
+    "condition": "good",
+    "price": 16,
+    "colors": [
+      "blue",
+      "white"
+    ],
+    "brand": null,
+    "platform": "depop"
+  },
+  {
+    "id": "lst_045",
+    "title": "Vintage Graphic Tee — Retro Racing",
+    "description": "Cotton graphic tee with a classic crew neck and colorful vintage print.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "graphic tee",
+      "streetwear"
+    ],
+    "size": "M",
+    "condition": "good",
+    "price": 24,
+    "colors": [
+      "blue",
+      "white"
+    ],
+    "brand": null,
+    "platform": "thredUp"
+  },
+  {
+    "id": "lst_046",
+    "title": "Vintage Graphic Tee — Summer Festival",
+    "description": "Cotton graphic tee with a classic crew neck and colorful vintage print.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "graphic tee",
+      "streetwear"
+    ],
+    "size": "M",
+    "condition": "good",
+    "price": 38,
+    "colors": [
+      "blue",
+      "white"
+    ],
+    "brand": null,
+    "platform": "poshmark"
+  },
+  {
+    "id": "lst_047",
+    "title": "Y2K Graphic Tee — Daisy Print",
+    "description": "Fitted cotton graphic tee with a cropped hem and playful early-2000s print.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "y2k",
+      "graphic tee"
+    ],
+    "size": "S",
+    "condition": "good",
+    "price": 16,
+    "colors": [
+      "pink",
+      "white"
+    ],
+    "brand": null,
+    "platform": "depop"
+  },
+  {
+    "id": "lst_048",
+    "title": "Y2K Graphic Tee — Star Print",
+    "description": "Fitted cotton graphic tee with a cropped hem and playful early-2000s print.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "y2k",
+      "graphic tee"
+    ],
+    "size": "S",
+    "condition": "good",
+    "price": 24,
+    "colors": [
+      "pink",
+      "white"
+    ],
+    "brand": null,
+    "platform": "thredUp"
+  },
+  {
+    "id": "lst_049",
+    "title": "Y2K Graphic Tee — Cherry Print",
+    "description": "Fitted cotton graphic tee with a cropped hem and playful early-2000s print.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "y2k",
+      "graphic tee"
+    ],
+    "size": "S",
+    "condition": "good",
+    "price": 38,
+    "colors": [
+      "pink",
+      "white"
+    ],
+    "brand": null,
+    "platform": "poshmark"
+  },
+  {
+    "id": "lst_050",
+    "title": "Vintage Graphic Tee — Mountain Trail",
+    "description": "Roomy cotton graphic tee with a washed finish and bold front print.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "graphic tee",
+      "streetwear"
+    ],
+    "size": "XL",
+    "condition": "good",
+    "price": 16,
+    "colors": [
+      "grey",
+      "black"
+    ],
+    "brand": null,
+    "platform": "depop"
+  },
+  {
+    "id": "lst_051",
+    "title": "Vintage Graphic Tee — City Lights",
+    "description": "Roomy cotton graphic tee with a washed finish and bold front print.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "graphic tee",
+      "streetwear"
+    ],
+    "size": "XL",
+    "condition": "good",
+    "price": 24,
+    "colors": [
+      "grey",
+      "black"
+    ],
+    "brand": null,
+    "platform": "thredUp"
+  },
+  {
+    "id": "lst_052",
+    "title": "Vintage Graphic Tee — Record Store",
+    "description": "Roomy cotton graphic tee with a washed finish and bold front print.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "graphic tee",
+      "streetwear"
+    ],
+    "size": "XL",
+    "condition": "good",
+    "price": 38,
+    "colors": [
+      "grey",
+      "black"
+    ],
+    "brand": null,
+    "platform": "poshmark"
+  },
+  {
+    "id": "lst_053",
+    "title": "Vintage Flannel Shirt — Forest Plaid",
+    "description": "Soft plaid flannel shirt with long sleeves and a button front; easy to layer.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "flannel",
+      "grunge",
+      "layering"
+    ],
+    "size": "L",
+    "condition": "good",
+    "price": 18,
+    "colors": [
+      "green",
+      "navy"
+    ],
+    "brand": null,
+    "platform": "depop"
+  },
+  {
+    "id": "lst_054",
+    "title": "Vintage Flannel Shirt — Navy Plaid",
+    "description": "Soft plaid flannel shirt with long sleeves and a button front; easy to layer.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "flannel",
+      "grunge",
+      "layering"
+    ],
+    "size": "L",
+    "condition": "good",
+    "price": 28,
+    "colors": [
+      "green",
+      "navy"
+    ],
+    "brand": null,
+    "platform": "thredUp"
+  },
+  {
+    "id": "lst_055",
+    "title": "Vintage Flannel Shirt — Rust Plaid",
+    "description": "Soft plaid flannel shirt with long sleeves and a button front; easy to layer.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "flannel",
+      "grunge",
+      "layering"
+    ],
+    "size": "L",
+    "condition": "good",
+    "price": 42,
+    "colors": [
+      "green",
+      "navy"
+    ],
+    "brand": null,
+    "platform": "poshmark"
+  },
+  {
+    "id": "lst_056",
+    "title": "Vintage Flannel Shirt — Moss Plaid",
+    "description": "Cotton plaid flannel shirt with a relaxed fit, chest pocket, and button cuffs.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "flannel",
+      "grunge",
+      "layering"
+    ],
+    "size": "M",
+    "condition": "good",
+    "price": 18,
+    "colors": [
+      "blue",
+      "burgundy"
+    ],
+    "brand": null,
+    "platform": "depop"
+  },
+  {
+    "id": "lst_057",
+    "title": "Vintage Flannel Shirt — Blue Plaid",
+    "description": "Cotton plaid flannel shirt with a relaxed fit, chest pocket, and button cuffs.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "flannel",
+      "grunge",
+      "layering"
+    ],
+    "size": "M",
+    "condition": "good",
+    "price": 28,
+    "colors": [
+      "blue",
+      "burgundy"
+    ],
+    "brand": null,
+    "platform": "thredUp"
+  },
+  {
+    "id": "lst_058",
+    "title": "Vintage Flannel Shirt — Burgundy Plaid",
+    "description": "Cotton plaid flannel shirt with a relaxed fit, chest pocket, and button cuffs.",
+    "category": "tops",
+    "style_tags": [
+      "vintage",
+      "flannel",
+      "grunge",
+      "layering"
+    ],
+    "size": "M",
+    "condition": "good",
+    "price": 42,
+    "colors": [
+      "blue",
+      "burgundy"
+    ],
+    "brand": null,
+    "platform": "poshmark"
+  },
+  {
+    "id": "lst_059",
+    "title": "90s Track Jacket — Teal Stripe",
+    "description": "Lightweight 90s track jacket with a full zip and contrasting sleeve stripes.",
+    "category": "outerwear",
+    "style_tags": [
+      "90s",
+      "vintage",
+      "athletic",
+      "streetwear"
+    ],
+    "size": "M",
+    "condition": "good",
+    "price": 28,
+    "colors": [
+      "teal",
+      "white"
+    ],
+    "brand": null,
+    "platform": "depop"
+  },
+  {
+    "id": "lst_060",
+    "title": "90s Track Jacket — Burgundy Stripe",
+    "description": "Lightweight 90s track jacket with a full zip and contrasting sleeve stripes.",
+    "category": "outerwear",
+    "style_tags": [
+      "90s",
+      "vintage",
+      "athletic",
+      "streetwear"
+    ],
+    "size": "M",
+    "condition": "good",
+    "price": 44,
+    "colors": [
+      "teal",
+      "white"
+    ],
+    "brand": null,
+    "platform": "thredUp"
+  },
+  {
+    "id": "lst_061",
+    "title": "90s Track Jacket — Forest Stripe",
+    "description": "Lightweight 90s track jacket with a full zip and contrasting sleeve stripes.",
+    "category": "outerwear",
+    "style_tags": [
+      "90s",
+      "vintage",
+      "athletic",
+      "streetwear"
+    ],
+    "size": "M",
+    "condition": "good",
+    "price": 64,
+    "colors": [
+      "teal",
+      "white"
+    ],
+    "brand": null,
+    "platform": "poshmark"
+  },
+  {
+    "id": "lst_062",
+    "title": "90s Track Jacket — Blue Stripe",
+    "description": "Relaxed 90s track jacket with a zip front, striped sleeves, and elastic cuffs.",
+    "category": "outerwear",
+    "style_tags": [
+      "90s",
+      "vintage",
+      "athletic",
+      "streetwear"
+    ],
+    "size": "L",
+    "condition": "good",
+    "price": 28,
+    "colors": [
+      "blue",
+      "white"
+    ],
+    "brand": null,
+    "platform": "depop"
+  },
+  {
+    "id": "lst_063",
+    "title": "90s Track Jacket — Red Stripe",
+    "description": "Relaxed 90s track jacket with a zip front, striped sleeves, and elastic cuffs.",
+    "category": "outerwear",
+    "style_tags": [
+      "90s",
+      "vintage",
+      "athletic",
+      "streetwear"
+    ],
+    "size": "L",
+    "condition": "good",
+    "price": 44,
+    "colors": [
+      "blue",
+      "white"
+    ],
+    "brand": null,
+    "platform": "thredUp"
+  },
+  {
+    "id": "lst_064",
+    "title": "90s Track Jacket — Charcoal Stripe",
+    "description": "Relaxed 90s track jacket with a zip front, striped sleeves, and elastic cuffs.",
+    "category": "outerwear",
+    "style_tags": [
+      "90s",
+      "vintage",
+      "athletic",
+      "streetwear"
+    ],
+    "size": "L",
+    "condition": "good",
+    "price": 64,
+    "colors": [
+      "blue",
+      "white"
+    ],
+    "brand": null,
+    "platform": "poshmark"
+  },
+  {
+    "id": "lst_065",
+    "title": "Vintage Baggy Jeans — Stone Wash",
+    "description": "Cotton denim jeans with a baggy straight leg and light wear at the hems.",
+    "category": "bottoms",
+    "style_tags": [
+      "vintage",
+      "denim",
+      "baggy",
+      "streetwear"
+    ],
+    "size": "W30",
+    "condition": "good",
+    "price": 24,
+    "colors": [
+      "blue"
+    ],
+    "brand": null,
+    "platform": "depop"
+  },
+  {
+    "id": "lst_066",
+    "title": "Vintage Baggy Jeans — Indigo Wash",
+    "description": "Cotton denim jeans with a baggy straight leg and light wear at the hems.",
+    "category": "bottoms",
+    "style_tags": [
+      "vintage",
+      "denim",
+      "baggy",
+      "streetwear"
+    ],
+    "size": "W30",
+    "condition": "good",
+    "price": 36,
+    "colors": [
+      "blue"
+    ],
+    "brand": null,
+    "platform": "thredUp"
+  },
+  {
+    "id": "lst_067",
+    "title": "Vintage Baggy Jeans — Black Wash",
+    "description": "Cotton denim jeans with a baggy straight leg and light wear at the hems.",
+    "category": "bottoms",
+    "style_tags": [
+      "vintage",
+      "denim",
+      "baggy",
+      "streetwear"
+    ],
+    "size": "W30",
+    "condition": "good",
+    "price": 54,
+    "colors": [
+      "blue"
+    ],
+    "brand": null,
+    "platform": "poshmark"
+  },
+  {
+    "id": "lst_068",
+    "title": "Vintage Baggy Jeans — Pale Wash",
+    "description": "Baggy denim jeans with a straight leg, five pockets, and a naturally faded finish.",
+    "category": "bottoms",
+    "style_tags": [
+      "vintage",
+      "denim",
+      "baggy",
+      "streetwear"
+    ],
+    "size": "W32",
+    "condition": "good",
+    "price": 24,
+    "colors": [
+      "indigo"
+    ],
+    "brand": null,
+    "platform": "depop"
+  },
+  {
+    "id": "lst_069",
+    "title": "Vintage Baggy Jeans — Deep Wash",
+    "description": "Baggy denim jeans with a straight leg, five pockets, and a naturally faded finish.",
+    "category": "bottoms",
+    "style_tags": [
+      "vintage",
+      "denim",
+      "baggy",
+      "streetwear"
+    ],
+    "size": "W32",
+    "condition": "good",
+    "price": 36,
+    "colors": [
+      "indigo"
+    ],
+    "brand": null,
+    "platform": "thredUp"
+  },
+  {
+    "id": "lst_070",
+    "title": "Vintage Baggy Jeans — Charcoal Wash",
+    "description": "Baggy denim jeans with a straight leg, five pockets, and a naturally faded finish.",
+    "category": "bottoms",
+    "style_tags": [
+      "vintage",
+      "denim",
+      "baggy",
+      "streetwear"
+    ],
+    "size": "W32",
+    "condition": "good",
+    "price": 54,
+    "colors": [
+      "indigo"
+    ],
+    "brand": null,
+    "platform": "poshmark"
+  },
+  {
+    "id": "lst_071",
+    "title": "Chunky Sneakers — White Mesh",
+    "description": "Chunky white sneakers with cushioned soles and light signs of wear.",
+    "category": "shoes",
+    "style_tags": [
+      "chunky",
+      "streetwear",
+      "sneakers"
+    ],
+    "size": "US 8",
+    "condition": "good",
+    "price": 26,
+    "colors": [
+      "white"
+    ],
+    "brand": null,
+    "platform": "depop"
+  },
+  {
+    "id": "lst_072",
+    "title": "Chunky Sneakers — White Leather",
+    "description": "Chunky white sneakers with cushioned soles and light signs of wear.",
+    "category": "shoes",
+    "style_tags": [
+      "chunky",
+      "streetwear",
+      "sneakers"
+    ],
+    "size": "US 8",
+    "condition": "good",
+    "price": 40,
+    "colors": [
+      "white"
+    ],
+    "brand": null,
+    "platform": "thredUp"
+  },
+  {
+    "id": "lst_073",
+    "title": "Chunky Sneakers — White Canvas",
+    "description": "Chunky white sneakers with cushioned soles and light signs of wear.",
+    "category": "shoes",
+    "style_tags": [
+      "chunky",
+      "streetwear",
+      "sneakers"
+    ],
+    "size": "US 8",
+    "condition": "good",
+    "price": 60,
+    "colors": [
+      "white"
+    ],
+    "brand": null,
+    "platform": "poshmark"
+  },
+  {
+    "id": "lst_074",
+    "title": "Chunky Sneakers — Cream Mesh",
+    "description": "Chunky cream sneakers with padded collars and sturdy rubber soles.",
+    "category": "shoes",
+    "style_tags": [
+      "chunky",
+      "streetwear",
+      "sneakers"
+    ],
+    "size": "US 9",
+    "condition": "good",
+    "price": 26,
+    "colors": [
+      "cream"
+    ],
+    "brand": null,
+    "platform": "depop"
+  },
+  {
+    "id": "lst_075",
+    "title": "Chunky Sneakers — Cream Leather",
+    "description": "Chunky cream sneakers with padded collars and sturdy rubber soles.",
+    "category": "shoes",
+    "style_tags": [
+      "chunky",
+      "streetwear",
+      "sneakers"
+    ],
+    "size": "US 9",
+    "condition": "good",
+    "price": 40,
+    "colors": [
+      "cream"
+    ],
+    "brand": null,
+    "platform": "thredUp"
+  },
+  {
+    "id": "lst_076",
+    "title": "Chunky Sneakers — Cream Canvas",
+    "description": "Chunky cream sneakers with padded collars and sturdy rubber soles.",
+    "category": "shoes",
+    "style_tags": [
+      "chunky",
+      "streetwear",
+      "sneakers"
+    ],
+    "size": "US 9",
+    "condition": "good",
+    "price": 60,
+    "colors": [
+      "cream"
+    ],
+    "brand": null,
+    "platform": "poshmark"
+  },
+  {
+    "id": "lst_077",
+    "title": "Black Combat Boots — Classic Lace-Up",
+    "description": "Black lace-up combat boots with ankle-height uppers and lightly scuffed soles.",
+    "category": "shoes",
+    "style_tags": [
+      "grunge",
+      "classic",
+      "boots"
+    ],
+    "size": "US 8",
+    "condition": "good",
+    "price": 30,
+    "colors": [
+      "black"
+    ],
+    "brand": null,
+    "platform": "depop"
+  },
+  {
+    "id": "lst_078",
+    "title": "Black Combat Boots — Buckle Detail",
+    "description": "Black lace-up combat boots with ankle-height uppers and lightly scuffed soles.",
+    "category": "shoes",
+    "style_tags": [
+      "grunge",
+      "classic",
+      "boots"
+    ],
+    "size": "US 8",
+    "condition": "good",
+    "price": 48,
+    "colors": [
+      "black"
+    ],
+    "brand": null,
+    "platform": "thredUp"
+  },
+  {
+    "id": "lst_079",
+    "title": "Black Combat Boots — Platform Sole",
+    "description": "Black lace-up combat boots with ankle-height uppers and lightly scuffed soles.",
+    "category": "shoes",
+    "style_tags": [
+      "grunge",
+      "classic",
+      "boots"
+    ],
+    "size": "US 8",
+    "condition": "good",
+    "price": 72,
+    "colors": [
+      "black"
+    ],
+    "brand": null,
+    "platform": "poshmark"
+  },
+  {
+    "id": "lst_080",
+    "title": "Vintage Linen Blazer — Sand",
+    "description": "Lightweight linen blazer with notch lapels, a relaxed fit, and two front pockets.",
+    "category": "outerwear",
+    "style_tags": [
+      "vintage",
+      "linen",
+      "classic",
+      "minimal"
+    ],
+    "size": "M",
+    "condition": "good",
+    "price": 28,
+    "colors": [
+      "cream"
+    ],
+    "brand": null,
+    "platform": "depop"
+  },
+  {
+    "id": "lst_081",
+    "title": "Vintage Linen Blazer — Oatmeal",
+    "description": "Lightweight linen blazer with notch lapels, a relaxed fit, and two front pockets.",
+    "category": "outerwear",
+    "style_tags": [
+      "vintage",
+      "linen",
+      "classic",
+      "minimal"
+    ],
+    "size": "M",
+    "condition": "good",
+    "price": 44,
+    "colors": [
+      "cream"
+    ],
+    "brand": null,
+    "platform": "thredUp"
+  },
+  {
+    "id": "lst_082",
+    "title": "Vintage Linen Blazer — Ivory",
+    "description": "Lightweight linen blazer with notch lapels, a relaxed fit, and two front pockets.",
+    "category": "outerwear",
+    "style_tags": [
+      "vintage",
+      "linen",
+      "classic",
+      "minimal"
+    ],
+    "size": "M",
+    "condition": "good",
+    "price": 66,
+    "colors": [
+      "cream"
+    ],
+    "brand": null,
+    "platform": "poshmark"
   }
 ]
