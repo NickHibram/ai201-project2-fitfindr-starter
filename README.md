@@ -183,25 +183,112 @@ Your README submission must document each tool's name, inputs, and return value.
 
 **User query:**
 
-**Step 1 — Tool called:**
-- Tool:
-- Input:
-- Why this tool:
-- Output:
+> “I’m looking for a vintage graphic tee under $30, size M. I like relaxed streetwear outfits.”
+
+**Step 1 — Parse query and update memory:**
+
+- Parsed description: `vintage graphic tee`
+- Parsed size: `M`
+- Parsed maximum price: `30.00`
+- Extracted style preferences: `vintage`, `streetwear`, and `relaxed`
+- Why this happens: The planning loop separates the search filters from the user’s style preferences.
+- Output: The query, extracted styles, and most recently mentioned size are written to `memory.md`. The session stores the parsed values in `session["parsed"]`.
 
 **Step 2 — Tool called:**
-- Tool:
-- Input:
-- Why this tool:
-- Output:
 
-**Step 3 — Tool called:**
-- Tool:
+- Tool: `search_listings`
 - Input:
-- Why this tool:
-- Output:
+
+```python
+search_listings(
+    description="vintage graphic tee",
+    size="M",
+    max_price=30.00
+)
+```
+
+- Why this tool: The agent needs to find relevant listings that match the description, size, and budget before it can recommend an outfit.
+- Output: The tool returns matching listings ranked by keyword relevance. The top result is:
+
+```python
+{
+    "id": "lst_002",
+    "title": "Y2K Baby Tee — Butterfly Print",
+    "category": "tops",
+    "style_tags": ["y2k", "vintage", "graphic tee", "cottagecore"],
+    "size": "S/M",
+    "condition": "excellent",
+    "price": 18.00,
+    "colors": ["white", "pink", "purple"],
+    "platform": "depop"
+}
+```
+
+The requested size `M` matches the listing’s combined `S/M` size.
+
+**Step 3 — Select and store the listing:**
+
+- Tool: No external tool is called during this step.
+- Input: The ranked results returned by `search_listings`.
+- Why this step is needed: The planning loop must choose one listing before requesting styling advice.
+- Output: The highest-ranked listing dictionary is stored as `session["selected_item"]`. This exact dictionary is passed to the next tool without being recreated or hardcoded.
+
+**Step 4 — Tool called:**
+
+- Tool: `suggest_outfit`
+- Input:
+
+```python
+suggest_outfit(
+    new_item=session["selected_item"],
+    wardrobe=session["wardrobe"],
+    style_memory=style_memory
+)
+```
+
+- Why this tool: The agent needs to create an outfit using the selected listing, pieces from the user’s wardrobe, and preferences stored in `memory.md`.
+- Output: The tool returns an outfit suggestion such as:
+
+> Pair the Y2K Baby Tee **(new item)** with the Baggy straight-leg jeans, dark wash, Chunky white sneakers, and Black crossbody bag. This creates a relaxed vintage streetwear outfit while keeping the butterfly tee as the focal point.
+
+The exact response is stored in `session["outfit_suggestion"]`.
+
+**Step 5 — Update outfit memory:**
+
+- Tool: No external tool is called during this step.
+- Input: `session["selected_item"]` and `session["outfit_suggestion"]`
+- Why this step is needed: Later interactions should remember what item was selected and how it was styled.
+- Output: The complete selected-listing dictionary and exact outfit recommendation are appended to `memory.md`.
+
+**Step 6 — Tool called:**
+
+- Tool: `create_fit_card`
+- Input:
+
+```python
+create_fit_card(
+    outfit=session["outfit_suggestion"],
+    new_item=session["selected_item"]
+)
+```
+
+- Why this tool: The agent uses the completed outfit recommendation and selected listing to create a short, shareable outfit caption.
+- Output: The tool returns a fit card such as:
+
+> Butterfly graphics and baggy denim are bringing the early-2000s energy. I styled the Y2K Baby Tee — Butterfly Print with chunky sneakers and a black crossbody bag for an easy vintage streetwear look. Found it on Depop for $18.00.
+
+The caption is stored in `session["fit_card"]`.
 
 **Final output to user:**
+
+The interface displays:
+
+- **Your Style Profile:** Vintage • Streetwear • Relaxed; **Remembered size:** M
+- **Top listing found:** Y2K Baby Tee — Butterfly Print, size S/M, excellent condition, $18.00 on Depop
+- **Outfit idea:** The tee with baggy dark-wash jeans, chunky white sneakers, and a black crossbody bag
+- **Your fit card:** The generated shareable caption
+
+The completed session is returned with no error, and the information saved in `memory.md` can influence the user’s next search and outfit recommendation.
 
 ---
 
@@ -212,9 +299,9 @@ Your README submission must document each tool's name, inputs, and return value.
 
 | Tool | Failure mode | Agent response |
 |------|-------------|----------------|
-| `search_listings` | | |
-| `suggest_outfit` | | |
-| `create_fit_card` | | |
+| `search_listings` | No listings match the description, size, or maximum price. | Return an empty list without raising an exception. The planning loop displays a helpful message suggesting a broader description, different size, or higher budget, then stops before calling the remaining tools. |
+| `suggest_outfit` | The wardrobe is empty, the LLM returns an empty response, or the API call fails. | For an empty wardrobe, request general styling advice instead of crashing. If the LLM response is empty or the API fails, the planning loop stores a safe error message and stops before creating a fit card. |
+| `create_fit_card` | The outfit suggestion is missing or contains only whitespace, or the LLM call fails. | Return a descriptive message without calling the LLM when the outfit is empty. If the API fails or returns no usable content, the planning loop records an error and ends gracefully. |
 
 ---
 
@@ -223,10 +310,49 @@ Your README submission must document each tool's name, inputs, and return value.
 <!-- Answer both questions with at least 2–3 sentences each. -->
 
 **One way planning.md helped during implementation:**
-
+Planning.md helped a lot during my implementation as it was helpful when building my ideas. Moreover when I decided I wanted to change it was helpful to see what my initial idea was.
 **One divergence from your spec, and why:**
+The original specification used plain Gradio textboxes for the three result panels. During implementation, I
+replaced them with gr.Markdown components because outfit tables and fit-card formatting appeared as raw, CSV-
+like text. This made the results easier to read while preserving the original panel titles and layout.
 
 ---
+
+
+## AI Usage
+
+<!-- Describe at least 2 specific instances where you used an AI tool during this project.
+     For each: what did you give the AI as input, what did it produce, and what did you
+     change, override, or direct differently?
+
+" -->
+
+**Instance 1**
+
+- *What I gave the AI:*
+I provided my memory requirements, the existing session-state structure, and an example showing how preferences from one query should affect a later outfit recommendation.
+
+- *What it produced:* 
+The AI initially proposed separate JSON memory files identified by unique session IDs. These files would store
+queries, extracted style preferences, selected listings, and outfit recommendations.
+- *What I changed or overrode:* 
+Because my application is designed for one browser user, I simplified the approach to a single memory.md file
+that resets when the application starts. Markdown makes the stored preferences and interaction history easier
+for me to inspect and debug. The file is passed to the outfit-generation tool so later recommendations use
+previously learned styles and sizes.
+
+**Instance 2**
+
+- *What I gave the AI:*
+I provided the existing Gradio layout, the three tool outputs, and instructions to preserve the titles for the
+listing, outfit idea, and fit-card sections.
+- *What it produced:* 
+The initial interface used gr.Textbox components to display the results. This caused Markdown tables and
+formatting from the tools to appear as plain or CSV-like text.
+- *What I changed or overrode:*
+I directed the AI to replace the result textboxes with gr.Markdown components. I also requested CSS styling
+for clearer panel headings, borders, spacing, and more readable tables while keeping the original section
+titles.
 
 ## Where to Start
 
