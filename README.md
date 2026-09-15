@@ -70,7 +70,118 @@ wardrobe = get_example_wardrobe()
 
 ## Tool Inventory
 
-### Style Profile Memory
+FitFindr uses four callable tools. Their documented signatures below match the
+functions in `tools.py`.
+
+| Tool | Purpose | Return value |
+|---|---|---|
+| `search_listings(description, size=None, max_price=None)` | Find and rank matching secondhand listings. | `list[dict]` |
+| `suggest_outfit(new_item, wardrobe, style_memory='')` | Build outfits around the selected listing using the wardrobe and remembered preferences. | `str` |
+| `create_fit_card(outfit, new_item)` | Turn an outfit recommendation into a short, shareable caption. | `str` |
+| `compare_price(selected_item, parsed=None)` | Compare the selected listing with similar listings and explain whether its price is good, fair, or high. | Markdown `str` |
+
+### Tool 1: `search_listings`
+
+**Signature:**
+
+```python
+search_listings(
+    description: str,
+    size: str | None = None,
+    max_price: float | None = None,
+) -> list[dict]
+```
+
+**Purpose:** Search the mock secondhand dataset and return the most relevant
+listings that satisfy the requested filters.
+
+**Inputs:**
+
+- `description`: Search words such as `"vintage graphic tee"`.
+- `size`: Optional size restriction. `None` disables size filtering. Matching is
+  case-insensitive, normalizes common size words, and supports compatible combined
+  sizes—for example, `M` matches `M` and `S/M`, but `L` does not match `XL`.
+- `max_price`: Optional inclusive price ceiling. `None` disables price filtering.
+
+**Return value:** A list of complete listing dictionaries ordered from highest to
+lowest keyword relevance. Each dictionary contains `id`, `title`, `description`,
+`category`, `style_tags`, `size`, `condition`, `price`, `colors`, `brand`, and
+`platform`.
+
+**How it works:** The tool calls `load_listings()`, applies size and price filters,
+and scores the remaining records by distinct word overlap across their searchable
+fields. Listings with no keyword overlap are removed. Equal scores retain dataset
+order.
+
+**Failure behavior:** If nothing matches, the tool returns `[]` instead of raising
+an exception. The planning loop then shows a helpful message and skips
+`suggest_outfit()` and `create_fit_card()`.
+
+### Tool 2: `suggest_outfit`
+
+**Signature:**
+
+```python
+suggest_outfit(
+    new_item: dict,
+    wardrobe: dict,
+    style_memory: str = '',
+) -> str
+```
+
+**Purpose:** Generate one or two complete outfit ideas built around the selected
+secondhand item.
+
+**Inputs:**
+
+- `new_item`: The exact listing dictionary stored in `session["selected_item"]`.
+- `wardrobe`: A dictionary whose `items` list contains pieces the user owns. The
+  list may be empty.
+- `style_memory`: Optional contents of `memory.md`, including learned styles,
+  remembered size, and earlier interactions.
+
+**Return value:** A non-empty outfit-recommendation string. When wardrobe pieces
+are available, the response uses their exact names and identifies the selected
+listing as the new item.
+
+**How it works:** The tool calls Groq using `openai/gpt-oss-120b`. It supplies the
+selected item, wardrobe, and style memory as data. If memory is available, the
+prompt asks the model to make relevant remembered preferences visible in the new
+recommendation.
+
+**Failure behavior:** An empty wardrobe produces useful general styling advice
+rather than an error. An empty model response raises `ValueError`; provider and
+credential errors propagate to the planning loop, which returns a safe
+user-facing message and does not create a fit card.
+
+### Tool 3: `create_fit_card`
+
+**Signature:**
+
+```python
+create_fit_card(outfit: str, new_item: dict) -> str
+```
+
+**Purpose:** Convert the completed outfit recommendation into a short caption
+suitable for sharing as an outfit-of-the-day post.
+
+**Inputs:**
+
+- `outfit`: The exact string stored in `session["outfit_suggestion"]`.
+- `new_item`: The exact listing dictionary stored in `session["selected_item"]`.
+
+**Return value:** A two-to-four-sentence caption that naturally mentions the item
+name, price, and platform while describing the outfit's vibe.
+
+**How it works:** The tool calls Groq using `openai/gpt-oss-120b` with a nonzero
+temperature so valid repeated calls can vary. The outfit and listing are supplied
+as factual input to the model.
+
+**Failure behavior:** If `outfit` is empty or whitespace, the tool returns a clear
+error string without calling Groq. Empty model responses raise `ValueError`, and
+provider or credential failures are handled by the planning loop.
+
+### Supporting Feature: Style Profile Memory
 
 FitFindr keeps a lightweight, single-user style history in `memory.md`. The file
 is created in the project root and reset each time the app is started with
@@ -115,16 +226,40 @@ separately.
 This deliberately simple version is scoped to one local browser user. It does
 not isolate multiple simultaneous users; restarting the app begins a new memory.
 
-### Price Comparison Tool
+### Tool 4: `compare_price` (Price Comparison Tool)
+
+**Signature:**
+
+```python
+compare_price(
+    selected_item: dict | None,
+    parsed: dict | None = None,
+) -> str
+```
+
+**Purpose:** Evaluate the selected item's price against relevant listings from
+the existing dataset without making an LLM call.
+
+**Inputs:**
+
+- `selected_item`: The listing currently stored in the agent session. It may be
+  `None` if the user has not completed a successful search.
+- `parsed`: Optional saved search parameters. Its description controls relevance
+  ranking, and its size preserves the original size restriction. The original
+  maximum-price filter is intentionally excluded from the comparison benchmark.
+
+**Return value:** A Markdown string containing `Good Deal`, `Fair Price`, or
+`Bad Deal`, followed by the selected price, comparable median, percentage
+difference, price range, comparison count, matching rules, and supporting table.
+
+**Failure behavior:** A missing selection or fewer than two comparable listings
+returns a helpful explanation instead of raising an exception. Dataset-loading or
+invalid-price problems also return descriptive messages.
 
 Click **Price Comparison Tool** below the result panels and above **Try these queries**
 after searching. It uses the selected listing retained in your browser session; no
 second item entry or LLM call is needed. A new search clears the previous comparison,
 and an unsuccessful search clears the selection.
-
-`compare_price(selected_item: dict | None, parsed: dict | None = None) -> str` in `tools.py` returns a Markdown
-assessment with reasoning and a table of comparable listings, or a helpful message
-when no item is selected or fewer than two comparables exist.
 
 Comparables come from `load_listings()`, excluding the selected ID. They must share
 the category and garment type. A fixed, case-insensitive vocabulary recognizes
